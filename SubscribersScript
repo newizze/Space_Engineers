@@ -1,0 +1,118 @@
+using System;
+using System.Text;
+using System.Collections;
+using System.Collections.Generic;
+using VRageMath;
+using VRage.Game;
+using Sandbox.ModAPI.Interfaces;
+using Sandbox.ModAPI.Ingame;
+using Sandbox.Game.EntityComponents;
+using VRage.Game.Components;
+using VRage.Collections;
+using VRage.Game.ObjectBuilders.Definitions;
+using VRage.Game.ModAPI.Ingame;
+using SpaceEngineers.Game.ModAPI.Ingame;
+
+namespace Test;
+   
+public sealed class Program : MyGridProgram
+{
+    /// Start of the script
+
+    String DisplayName = "Шахтер1";
+    String CockpitName = "Кабина";
+
+    IMyCockpit Cockpit;
+    IMyTextSurface Display;
+
+    List<IMyBatteryBlock> Batteries = new List<IMyBatteryBlock>();
+    List<IMyJumpDrive> Drives = new List<IMyJumpDrive>();
+    List<IMyCargoContainer> Cargos = new List<IMyCargoContainer>();
+
+    public Program()
+    {
+        Cockpit = GridTerminalSystem.GetBlockWithName(CockpitName) as IMyCockpit;
+        Display = GridTerminalSystem.GetBlockWithName(DisplayName) as IMyTextSurface;
+
+
+        GridTerminalSystem.GetBlocksOfType<IMyBatteryBlock>(Batteries, Battery => Battery.CubeGrid == Cockpit.CubeGrid);
+        GridTerminalSystem.GetBlocksOfType<IMyJumpDrive>(Drives, Drives => Drives.CubeGrid == Cockpit.CubeGrid);
+
+        GridTerminalSystem.GetBlocksOfType<IMyCargoContainer>(Cargos, Cargo => Cargo.CubeGrid == Cockpit.CubeGrid);
+
+        Display.ContentType = VRage.Game.GUI.TextPanel.ContentType.TEXT_AND_IMAGE;
+        Display.FontColor = Color.Yellow;
+        Display.FontSize = 1.2f;
+
+        //Runtime.UpdateFrequency = UpdateFrequency.Update1;
+        //Runtime.UpdateFrequency = UpdateFrequency.Update10;
+        Runtime.UpdateFrequency = UpdateFrequency.Update100;
+    }
+
+    void Main()
+    {
+            Display.WriteText("");
+
+            Display.WriteText("Уровень заряда: " + GetBatteriesStoredPowerl().ToString() + "%" + "\n", true);
+
+            Display.WriteText("Уровень заряда J.D: " + GetDrives().ToString() + "%" + "\n", true);
+
+            Display.WriteText("Заполнение Контейнеров: " + GetCargo().ToString() + "%" + "\n", true);
+
+    }
+    double GetBatteriesStoredPowerl()
+    {
+        if (Batteries.Count > 0)
+        {
+            double StoredPower = 0;
+            double MaxStoredPower = 0;
+            foreach (IMyBatteryBlock Battery in Batteries)
+            {
+                MaxStoredPower += Battery.MaxStoredPower;
+                StoredPower += Battery.CurrentStoredPower;
+            }
+
+            return Math.Round(StoredPower / MaxStoredPower * 100);
+        }
+
+        return 0;
+    }
+
+    double GetDrives()
+    {
+        if (Drives.Count > 0)
+        {
+            double StoredPower = 0;
+            double MaxStoredPower = 0;
+            foreach (IMyJumpDrive Drive in Drives)
+            {
+                MaxStoredPower += Drive.MaxStoredPower;
+                StoredPower += Drive.CurrentStoredPower;
+            }
+
+            return Math.Round(StoredPower / MaxStoredPower * 100);
+        }
+
+        return 0;
+    }
+
+    double GetCargo()
+    {
+        if (Cargos.Count > 0)
+        {
+            double CurrentVolume = 0;
+            double MaxVolume = 0;
+            foreach (IMyCargoContainer Cargo in Cargos)
+            {
+                CurrentVolume += (float)Cargo.GetInventory().CurrentVolume;/// Так предложила студия
+                MaxVolume += (float)Cargo.GetInventory().MaxVolume;/// Так предложила студия
+            }
+
+            return Math.Round(CurrentVolume / MaxVolume * 100);
+        }
+        return 0;
+    }
+
+    /// End of the script
+}
+
